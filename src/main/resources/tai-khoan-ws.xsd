@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://spring-ws.securities.demo.com/taikhoan"
+           targetNamespace="http://spring-ws.securities.demo.com/taikhoan"
+           elementFormDefault="qualified">
+
+    <xs:complexType name="SoTaiKhoanOnlyType">
+        <xs:sequence>
+            <xs:element name="soTaiKhoan" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SoTienType">
+        <xs:sequence>
+            <xs:element name="soTaiKhoan" type="xs:string"/>
+            <xs:element name="soTien" type="xs:double"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="MoTaiKhoanType">
+        <xs:sequence>
+            <xs:element name="khachHangId" type="xs:string"/>
+            <xs:element name="loaiTaiKhoan" type="xs:string"/>
+            <xs:element name="soDuBanDau" type="xs:double"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TaiKhoanResponseType">
+        <xs:sequence>
+            <xs:element name="soTaiKhoan" type="xs:string"/>
+            <xs:element name="khachHangId" type="xs:string"/>
+            <xs:element name="loaiTaiKhoan" type="xs:string"/>
+            <xs:element name="trangThai" type="xs:string"/>
+            <xs:element name="ngayMo" type="xs:string"/>
+            <xs:element name="soDuTien" type="xs:double"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TaiKhoanFaultType">
+        <xs:sequence>
+            <xs:element name="message" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="MoTaiKhoanRequest" type="tns:MoTaiKhoanType"/>
+    <xs:element name="TruyVanTaiKhoanRequest" type="tns:SoTaiKhoanOnlyType"/>
+    <xs:element name="KhoaTaiKhoanRequest" type="tns:SoTaiKhoanOnlyType"/>
+    <xs:element name="MoKhoaTaiKhoanRequest" type="tns:SoTaiKhoanOnlyType"/>
+    <xs:element name="DongTaiKhoanRequest" type="tns:SoTaiKhoanOnlyType"/>
+    <xs:element name="NapTienRequest" type="tns:SoTienType"/>
+    <xs:element name="RutTienRequest" type="tns:SoTienType"/>
+    <xs:element name="TaiKhoanResponse" type="tns:TaiKhoanResponseType"/>
+    <xs:element name="TaiKhoanFault" type="tns:TaiKhoanFaultType"/>
+
+</xs:schema>

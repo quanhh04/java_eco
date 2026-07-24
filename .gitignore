@@ -1,0 +1,8 @@
+target/
+*.class
+db.properties
+dependency-reduced-pom.xml
+quarkus-app/target/
+quarkus-app/src/main/resources/application.properties
+.idea/
+*.iml

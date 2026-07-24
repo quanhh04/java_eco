@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package taikhoan;
+
+option java_package = "com.demo.securities.grpc";
+option java_multiple_files = true;
+
+message MoTaiKhoanRequest {
+  string khach_hang_id = 1;
+  string loai_tai_khoan = 2;
+  double so_du_ban_dau = 3;
+}
+
+message TruyVanRequest {
+  string so_tai_khoan = 1;
+}
+
+message SoTienRequest {
+  string so_tai_khoan = 1;
+  double so_tien = 2;
+}
+
+message TaiKhoanResponse {
+  string so_tai_khoan = 1;
+  string khach_hang_id = 2;
+  string loai_tai_khoan = 3;
+  string trang_thai = 4;
+  string ngay_mo = 5;
+  double so_du_tien = 6;
+}
+
+service TaiKhoanGrpcService {
+  rpc MoTaiKhoan(MoTaiKhoanRequest) returns (TaiKhoanResponse);
+  rpc TruyVanTaiKhoan(TruyVanRequest) returns (TaiKhoanResponse);
+  rpc NapTien(SoTienRequest) returns (TaiKhoanResponse);
+  rpc RutTien(SoTienRequest) returns (TaiKhoanResponse);
+  rpc KhoaTaiKhoan(TruyVanRequest) returns (TaiKhoanResponse);
+  rpc MoKhoaTaiKhoan(TruyVanRequest) returns (TaiKhoanResponse);
+  rpc DongTaiKhoan(TruyVanRequest) returns (TaiKhoanResponse);
+
+  // Server-streaming: diem manh rieng cua gRPC (HTTP/2 streaming) ma REST/SOAP khong co.
+  // Server poll DB dinh ky, day state moi cho client toi khi client ngat ket noi.
+  rpc TheoDoiSoDu(TruyVanRequest) returns (stream TaiKhoanResponse);
+}

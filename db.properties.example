@@ -1,0 +1,4 @@
+db.url=jdbc:postgresql://<host>:5432/<database>
+db.user=<user>
+db.password=<password>
+db.schema=<schema>

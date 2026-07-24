@@ -1,0 +1,15 @@
+# Copy file nay thanh application.properties va dien thong tin ket noi that.
+# Cung 1 database voi 13 entry point kia (doc thu cong o day vi day la project
+# rieng, khong dung chung DatabaseConfig cua project chinh).
+quarkus.datasource.db-kind=postgresql
+quarkus.datasource.username=<user>
+quarkus.datasource.password=<password>
+quarkus.datasource.jdbc.url=jdbc:postgresql://<host>:5432/<database>?currentSchema=<schema>
+
+# Bang da co san (schema.sql o project chinh da tao) - khong de Hibernate tu sinh/sua DDL.
+quarkus.hibernate-orm.database.generation=none
+
+quarkus.http.port=8094
+
+# Panache/Hibernate ORM can biet schema mac dinh de map @Table khong ghi schema tuong minh.
+quarkus.hibernate-orm.database.default-schema=<schema>

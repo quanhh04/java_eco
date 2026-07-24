@@ -1,0 +1,22 @@
+type TaiKhoan {
+    soTaiKhoan: String!
+    khachHangId: String!
+    loaiTaiKhoan: String!
+    trangThai: String!
+    ngayMo: String!
+    soDuTien: Float!
+}
+
+type Query {
+    taiKhoan(so: String!): TaiKhoan
+    danhSachTaiKhoan(khachHangId: String): [TaiKhoan!]!
+}
+
+type Mutation {
+    moTaiKhoan(khachHangId: String!, loaiTaiKhoan: String!, soDuBanDau: Float): TaiKhoan!
+    napTien(so: String!, soTien: Float!): TaiKhoan!
+    rutTien(so: String!, soTien: Float!): TaiKhoan!
+    khoaTaiKhoan(so: String!): TaiKhoan!
+    moKhoaTaiKhoan(so: String!): TaiKhoan!
+    dongTaiKhoan(so: String!): TaiKhoan!
+}
