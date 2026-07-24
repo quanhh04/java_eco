@@ -94,7 +94,8 @@ src/main/java/com/demo/securities/
   springmvc/                 WebMvcConfig (@EnableWebMvc) — package RIÊNG, chỉ SpringMvcMain biết tới, không để SpringBootMain quét trúng
   springflux/                KhachHangReactiveController, TaiKhoanReactiveController (Mono/Flux, bọc service blocking qua Schedulers.boundedElastic)
   springws/                  TaiKhoanEndpoint (@Endpoint, @PayloadRoot), WsConfig, request/response JAXB tay viết khớp XSD, TaiKhoanFaultException (@SoapFault)
-  springfw/                  entity/TaiKhoanEntity (JPA), dao/TaiKhoanDao (EntityManager thuần), service/TaiKhoanFwService (@Transactional, có chuyenTien demo rollback), aop/LoggingAspect, config/JpaConfig+AopConfig+SecurityConfig, web/TaiKhoanFwController
+  springfw/                  entity/TaiKhoanEntity (JPA, có @Version cho Optimistic Lock), dao/TaiKhoanDao (EntityManager thuần), service/TaiKhoanFwService (@Transactional, có chuyenTien demo rollback) + OptimisticLockDemoService (dùng chung với SpringBootMain), aop/LoggingAspect, config/JpaConfig+AopConfig+SecurityConfig, web/TaiKhoanFwController
+  springboot/                OptimisticLockDemoController — riêng cho SpringBootMain, tái dùng TaiKhoanDao/OptimisticLockDemoService của springfw/ qua @Import
   grpc/                      TaiKhoanGrpcServiceImpl (dùng lại TaiKhoanService), + code gen tự động từ .proto (KHÔNG commit, nằm trong target/generated-sources/protobuf)
   websocket/                 TaiKhoanWebSocketEndpoint (@ServerEndpoint, static field tham chiếu TaiKhoanService)
   graphql/                   TaiKhoanGraphQlController (@Controller, @QueryMapping/@MutationMapping), GraphQlExceptionResolver (DataFetcherExceptionResolver)
@@ -271,6 +272,8 @@ mvn compile exec:java -Dexec.mainClass=com.demo.securities.SpringMvcMain -Dserve
 
 Tái dùng NGUYÊN `KhachHangController`/`TaiKhoanController`/`GlobalExceptionHandler`/`AppConfig` từ `SpringMvcMain` ở trên — không một dòng code Tomcat/DispatcherServlet nào, chỉ `@SpringBootApplication` + `SpringApplicationBuilder(...).web(WebApplicationType.SERVLET).run(...)`. Đây chính là điểm so sánh trực tiếp: cùng controller, khác hẳn lượng code khởi động.
 
+Ngoài route JDBC gốc, entry point này còn `@Import` thêm `TaiKhoanDao`/`OptimisticLockDemoService` (tái dùng NGUYÊN từ `SpringFrameworkMain`) cộng 1 endpoint `POST /api/tai-khoan/{so}/demo-optimistic-lock` — bật `spring-boot-starter-data-jpa`, cấu hình qua `spring.datasource.*`/`spring.jpa.*` properties (set trong `main()`, đọc từ `db.properties`), **không có `JpaConfig` thủ công nào** — đúng phép so sánh trực tiếp với mục Optimistic Lock của `SpringFrameworkMain` bên dưới: cùng entity, cùng service, khác duy nhất cách EntityManagerFactory/JpaTransactionManager được tạo ra.
+
 ```
 mvn compile exec:java -Dexec.mainClass=com.demo.securities.SpringBootMain -Dserver.port=8087
 ```
@@ -348,6 +351,21 @@ curl -u admin:admin123 -X POST http://localhost:8090/api/tai-khoan/TK000001/nap 
 ### Gotcha mới gặp khi build (khác 2 lỗi đã ghi ở trên)
 
 **Filter khởi tạo trước Servlet trong vòng đời Tomcat.** `DelegatingFilterProxy` (Security) init trước `DispatcherServlet` lúc `tomcat.start()`. Nếu không tự `context.setServletContext(ctx.getServletContext())` + `context.refresh()` tường minh TRƯỚC khi đăng ký cả filter lẫn servlet, `DelegatingFilterProxy` sẽ là bên đầu tiên đụng tới context và tự trigger `refresh()` — nhưng lúc đó chưa có `ServletContext` gắn vào, khiến `@EnableWebMvc` (`resourceHandlerMapping`) báo lỗi "No ServletContext set". Sửa bằng cách tự set `ServletContext` + `refresh()` ngay sau `addContext(...)`, trước khi đăng ký filter/servlet — cả 2 sau đó chỉ thấy context đã active và dùng lại, không refresh lần nữa.
+
+### Demo Optimistic Lock (`SpringFrameworkMain` port 8090 và `SpringBootMain` port 8087)
+
+`TaiKhoanEntity` có thêm field `@Version private long version;` (cột `version` trong `tai_khoan_chung_khoan`) — Hibernate tự thêm `AND version = ?` vào câu `UPDATE` và tự tăng version lên 1 mỗi lần flush; nếu `UPDATE` khớp 0 dòng (ai đó đã sửa/commit trước, version DB đã khác) thì ném `OptimisticLockException` thay vì âm thầm ghi đè (lost update) — không cần code tay kiểm tra version. Mọi endpoint ghi hiện có (`nap`, `rut`, `khoa`...) đã tự động được bảo vệ, không đổi hành vi khi không có tranh chấp.
+
+`OptimisticLockDemoService.demoXungDot(...)` (dùng chung cho cả 2 entry point) tái hiện xung đột **tất định** (không cần 2 thread/race timing thật, luôn đúng 1 kịch bản, không flaky) bằng 2 `EntityManager` riêng biệt trong cùng 1 request: "phiên A" (do `@Transactional` của Spring quản lý) đọc tài khoản rồi giữ trong bộ nhớ; "phiên B" (tự mở `EntityManager` + transaction riêng qua `EntityManagerFactory`, không liên quan transaction của Spring) đọc lại CÙNG tài khoản, sửa, commit ngay — mô phỏng "1 request khác đã thắng trước". Phiên A sửa tiếp trên entity cũ (version chưa đổi trong bộ nhớ) — lúc `@Transactional` commit sau khi method return, Hibernate phát hiện version lệch và ném exception.
+
+```
+curl -u admin:admin123 -X POST http://localhost:8090/api/tai-khoan/TK000001/demo-optimistic-lock   # SpringFrameworkMain
+curl -X POST http://localhost:8087/api/tai-khoan/TK000001/demo-optimistic-lock                       # SpringBootMain (không cần Basic Auth)
+```
+
+`GlobalExceptionHandler` (dùng chung, `com.demo.securities.spring`) bắt `org.springframework.orm.ObjectOptimisticLockingFailureException` → trả **409 Conflict** — idiom lỗi thứ 8 trong project, khác `400`/`404`/`500` đã có: báo đúng bản chất "xung đột dữ liệu", không phải "dữ liệu sai" hay "lỗi hệ thống". Gọi thử sẽ thấy: response 409 cho phiên A, nhưng số dư tài khoản vẫn tăng đúng 1 lần (từ phiên B) — chứng minh không có lost update, phiên A bị từ chối sạch sẽ thay vì âm thầm mất.
+
+Lưu ý: cột `version` chỉ được Hibernate/JPA trên 2 nhánh này quản lý — các entry point JDBC thuần (`TaiKhoanRepositoryImpl`) không đọc/ghi cột này, nên optimistic lock chỉ bảo vệ được xung đột giữa các writer đi qua JPA, không bảo vệ nếu có 1 writer JDBC xen vào giữa.
 
 ## Chạy gRPC (`GrpcMain`, port 8093)
 

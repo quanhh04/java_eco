@@ -8,6 +8,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 
@@ -40,6 +41,17 @@ public class TaiKhoanEntity {
 
     @Column(name = "so_du_tien")
     private double soDuTien;
+
+    // Optimistic lock: Hibernate tu doc gia tri nay luc SELECT, tu them "AND version = ?"
+    // vao cau UPDATE va tu tang len 1 luc flush - khong can code tay xu ly. Neu UPDATE
+    // dung 0 dong (nghia la ban ghi da bi ai do sua/commit truoc, version DB da khac),
+    // Hibernate nem OptimisticLockException thay vi am tham ghi de (lost update). Cot
+    // "version" chi duoc Hibernate/JPA tren nhanh nay quan ly - cac entry point JDBC
+    // thuan (TaiKhoanRepositoryImpl) khong dung, INSERT/UPDATE cua chung khong bump
+    // version nen khong tham gia bao ve nay.
+    @Version
+    @Column(name = "version")
+    private long version;
 
     protected TaiKhoanEntity() {
         // constructor no-arg protected - JPA yeu cau, khong dung truc tiep tu code ung dung
@@ -85,5 +97,9 @@ public class TaiKhoanEntity {
 
     public void setSoDuTien(double soDuTien) {
         this.soDuTien = soDuTien;
+    }
+
+    public long getVersion() {
+        return version;
     }
 }

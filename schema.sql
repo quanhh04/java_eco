@@ -18,5 +18,6 @@ CREATE TABLE IF NOT EXISTS account_management.tai_khoan_chung_khoan (
     loai_tai_khoan VARCHAR(10)    NOT NULL,
     trang_thai     VARCHAR(10)    NOT NULL,
     ngay_mo        TIMESTAMP      NOT NULL,
-    so_du_tien     NUMERIC(18,2)  NOT NULL DEFAULT 0
+    so_du_tien     NUMERIC(18,2)  NOT NULL DEFAULT 0,
+    version        BIGINT         NOT NULL DEFAULT 0
 );

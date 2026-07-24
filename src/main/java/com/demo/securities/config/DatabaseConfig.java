@@ -39,4 +39,16 @@ public final class DatabaseConfig {
     public static String getSchema() {
         return PROPERTIES.getProperty("db.schema", "public");
     }
+
+    public static String getUrl() {
+        return PROPERTIES.getProperty("db.url");
+    }
+
+    public static String getUser() {
+        return PROPERTIES.getProperty("db.user");
+    }
+
+    public static String getPassword() {
+        return PROPERTIES.getProperty("db.password");
+    }
 }

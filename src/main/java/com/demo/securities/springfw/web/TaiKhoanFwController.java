@@ -5,21 +5,26 @@ import com.demo.securities.spring.dto.OpenTaiKhoanRequest;
 import com.demo.securities.spring.dto.SoTienRequest;
 import com.demo.securities.spring.dto.TaiKhoanDto;
 import com.demo.securities.springfw.entity.TaiKhoanEntity;
+import com.demo.securities.springfw.service.OptimisticLockDemoService;
 import com.demo.securities.springfw.service.TaiKhoanFwService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tai-khoan")
 public class TaiKhoanFwController {
 
     private final TaiKhoanFwService taiKhoanFwService;
+    private final OptimisticLockDemoService optimisticLockDemoService;
 
-    public TaiKhoanFwController(TaiKhoanFwService taiKhoanFwService) {
+    public TaiKhoanFwController(TaiKhoanFwService taiKhoanFwService,
+                                 OptimisticLockDemoService optimisticLockDemoService) {
         this.taiKhoanFwService = taiKhoanFwService;
+        this.optimisticLockDemoService = optimisticLockDemoService;
     }
 
     @GetMapping
@@ -80,6 +85,18 @@ public class TaiKhoanFwController {
                                    @RequestBody SoTienRequest req) {
         taiKhoanFwService.chuyenTien(so, soDich, req.soTien());
         return toDto(taiKhoanFwService.truyVanTaiKhoan(so));
+    }
+
+    /**
+     * Demo Optimistic Lock: luon tai hien dung 1 xung dot (khong phai chay may lan
+     * moi trung 1 lan nhu race dua theo thread that) - xem OptimisticLockDemoService
+     * de biet co che. Ky vong tra ve 409 CONFLICT (GlobalExceptionHandler bat
+     * ObjectOptimisticLockingFailureException) thay vi 200 OK ghi de am tham.
+     */
+    @PostMapping("/{so}/demo-optimistic-lock")
+    public ResponseEntity<Map<String, String>> demoOptimisticLock(@PathVariable String so) {
+        optimisticLockDemoService.demoXungDot(so, 100, 100);
+        return ResponseEntity.ok(Map.of("ketQua", "Khong xung dot (khong nen xay ra voi demo nay)"));
     }
 
     private static TaiKhoanDto toDto(TaiKhoanEntity taiKhoan) {

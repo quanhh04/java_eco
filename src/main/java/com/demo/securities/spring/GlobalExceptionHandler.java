@@ -5,6 +5,7 @@ import com.demo.securities.exception.NotFoundException;
 import com.demo.securities.exception.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -28,6 +29,16 @@ public class GlobalExceptionHandler {
             DateTimeParseException.class, NullPointerException.class})
     public ResponseEntity<Map<String, String>> handleBadRequest(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", String.valueOf(e.getMessage())));
+    }
+
+    // Chi thuc su duoc kich hoat boi SpringFrameworkMain (nhanh duy nhat dung Hibernate/JPA
+    // voi entity co @Version) - cac entry point khac dung JDBC repo thuan nen khong bao gio
+    // nem exception nay. 409 la ma HTTP dung cho xung dot version, khac han 400 (du lieu sai)
+    // hay 500 (loi he thong that su).
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, String>> handleOptimisticLock(ObjectOptimisticLockingFailureException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", "Du lieu da bi giao dich khac thay doi truoc, vui long doc lai va thu lai"));
     }
 
     @ExceptionHandler(Exception.class)

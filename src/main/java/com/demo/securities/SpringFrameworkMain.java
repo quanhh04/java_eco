@@ -7,6 +7,7 @@ import com.demo.securities.springfw.config.AopConfig;
 import com.demo.securities.springfw.config.JpaConfig;
 import com.demo.securities.springfw.config.SecurityConfig;
 import com.demo.securities.springfw.dao.TaiKhoanDao;
+import com.demo.securities.springfw.service.OptimisticLockDemoService;
 import com.demo.securities.springfw.service.TaiKhoanFwService;
 import com.demo.securities.springfw.web.TaiKhoanFwController;
 import com.demo.securities.springmvc.WebMvcConfig;
@@ -45,6 +46,7 @@ public class SpringFrameworkMain {
                 SecurityConfig.class,
                 TaiKhoanDao.class,
                 TaiKhoanFwService.class,
+                OptimisticLockDemoService.class,
                 TaiKhoanFwController.class,
                 LoggingAspect.class,
                 GlobalExceptionHandler.class);
